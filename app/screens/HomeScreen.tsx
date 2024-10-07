@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, Image, FlatList, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  FlatList,
+  TouchableOpacity,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
 
 interface Player {
   player: string;
@@ -11,14 +19,23 @@ interface Player {
   id: string;
 }
 
+type RootStackParamList = {
+  Home: undefined;
+  PlayerDetail: { player: Player };
+};
+
 const HomeScreen = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigation = useNavigation();  // Sử dụng hook useNavigation
+
+  const navigation =
+    useNavigation<StackNavigationProp<RootStackParamList, "Home">>();
 
   const fetchPlayers = async () => {
     try {
-      const response = await fetch("https://65451fd55a0b4b04436dad71.mockapi.io/Player");
+      const response = await fetch(
+        "https://65451fd55a0b4b04436dad71.mockapi.io/Player"
+      );
       const data = await response.json();
       setPlayers(data);
       setLoading(false);
@@ -33,7 +50,9 @@ const HomeScreen = () => {
   }, []);
 
   const renderItem = ({ item }: { item: Player }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('PlayerDetail', { player: item })}>
+    <TouchableOpacity
+      onPress={() => navigation.navigate("PlayerDetail", { player: item })}
+    >
       <View style={styles.card}>
         <Image source={{ uri: item.image }} style={styles.image} />
         <View style={styles.intro}>

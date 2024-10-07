@@ -5,7 +5,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import HomeScreen from "./app/screens/HomeScreen";
 import ProfileScreen from "./app/screens/ProfileScreen";
-import PlayerDetailScreen from "./app/screens/PlayerDetailScreen"; // Nhớ import
+import PlayerDetailScreen from "./app/screens/PlayerDetailScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
