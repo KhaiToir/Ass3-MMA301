@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -6,16 +6,19 @@ import {
   Image,
   FlatList,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import Icon from "react-native-vector-icons/FontAwesome";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface Player {
   player: string;
-  old: number;
+  age: number;
   image: string;
   price: number;
-  caption: boolean;
+  captain: boolean;
   id: string;
 }
 
@@ -27,6 +30,8 @@ type RootStackParamList = {
 const HomeScreen = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [favoritePlayers, setFavoritePlayers] = useState<string[]>([]);
 
   const navigation =
     useNavigation<StackNavigationProp<RootStackParamList, "Home">>();
@@ -45,25 +50,91 @@ const HomeScreen = () => {
     }
   };
 
+  // Lấy danh sách cầu thủ yêu thích từ AsyncStorage
+  const loadFavoritePlayers = async () => {
+    try {
+      const favorites = await AsyncStorage.getItem("favorites");
+      if (favorites) {
+        setFavoritePlayers(JSON.parse(favorites));
+      }
+    } catch (error) {
+      console.error("Error loading favorites:", error);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadFavoritePlayers();
+    }, [])
+  );
+
+
   useEffect(() => {
     fetchPlayers();
+    loadFavoritePlayers();
   }, []);
 
-  const renderItem = ({ item }: { item: Player }) => (
-    <TouchableOpacity
-      onPress={() => navigation.navigate("PlayerDetail", { player: item })}
-    >
-      <View style={styles.card}>
-        <Image source={{ uri: item.image }} style={styles.image} />
-        <View style={styles.intro}>
-          <Text style={styles.name}>{item.player}</Text>
-          <Text>Age: {item.old}</Text>
-          <Text>Price: ${item.price}</Text>
-          <Text>Caption: {item.caption ? "Yes" : "No"}</Text>
+  // Thêm hoặc xóa cầu thủ khỏi danh sách yêu thích
+  const toggleFavorite = async (playerId: string) => {
+    let updatedFavorites = [...favoritePlayers];
+
+    if (favoritePlayers.includes(playerId)) {
+      updatedFavorites = updatedFavorites.filter((id) => id !== playerId);
+    } else {
+      updatedFavorites.push(playerId);
+    }
+
+    setFavoritePlayers(updatedFavorites);
+
+    // Lưu lại danh sách yêu thích vào AsyncStorage
+    try {
+      await AsyncStorage.setItem("favorites", JSON.stringify(updatedFavorites));
+    } catch (error) {
+      console.error("Error saving favorites:", error);
+    }
+  };
+
+  // Hàm làm mới trang khi kéo xuống
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchPlayers();
+    setRefreshing(false);
+  };
+
+  const renderItem = ({ item }: { item: Player }) => {
+    const isFavorite = favoritePlayers.includes(item.id);
+
+    return (
+      <TouchableOpacity
+        onPress={() => navigation.navigate("PlayerDetail", { player: item })}
+      >
+        <View style={styles.containerCard}>
+          <View style={styles.card}>
+            <Image source={{ uri: item.image }} style={styles.image} />
+            <View style={styles.intro}>
+              <View style={styles.nameIntro}>
+                <Text style={styles.name}>{item.player}</Text>
+                <View>
+                  {item.captain ? (
+                    <Icon name="rebel" size={20} color="#1c1c89" />
+                  ) : null}
+                </View>
+              </View>
+              <Text style={styles.price}>Price: ${item.price}</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity onPress={() => toggleFavorite(item.id)}>
+            <Icon
+              name={isFavorite ? "heart" : "heart-o"}
+              size={20}
+              color="#cc5151"
+            />
+          </TouchableOpacity>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -74,46 +145,67 @@ const HomeScreen = () => {
   }
 
   return (
-    <FlatList
-      data={players}
-      renderItem={renderItem}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.container}
-    />
+    <View style={styles.container}>
+      <Text style={styles.title}>List Players</Text>
+      <FlatList
+        data={players}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        } // Thêm RefreshControl
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     padding: 10,
+    marginBottom: 20,
   },
+  containerCard: {
+    display: "flex",
+    justifyContent: "space-between",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    marginLeft: 4,
+    marginRight: 4,
+    borderRadius: 10,
+    marginVertical: 10,
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
   card: {
-    backgroundColor: "#fff",
     display: "flex",
-    gap: 20,
     alignItems: "center",
     flexDirection: "row",
-    padding: 15,
-    borderRadius: 10,
-    marginVertical: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    gap: 20,
   },
   image: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+  },
+  nameIntro: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    flexDirection: "row",
   },
   name: {
     fontSize: 18,
@@ -122,6 +214,14 @@ const styles = StyleSheet.create({
   intro: {
     display: "flex",
     flexDirection: "column",
+  },
+  price: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "600",
   },
 });
 

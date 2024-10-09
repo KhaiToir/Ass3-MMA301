@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import HomeScreen from "./app/screens/HomeScreen";
 import ProfileScreen from "./app/screens/ProfileScreen";
+import Icon from "react-native-vector-icons/FontAwesome";
 import PlayerDetailScreen from "./app/screens/PlayerDetailScreen";
 
 const Tab = createBottomTabNavigator();
@@ -26,13 +27,40 @@ const HomeStack = () => {
 export default function App() {
   return (
     <NavigationContainer>
-      <Tab.Navigator>
+      <Tab.Navigator
+        screenOptions={{
+          tabBarShowLabel: false,
+          tabBarStyle: { paddingBottom: 5, height: 50 },
+        }}
+      >
         <Tab.Screen
           name="Home"
           component={HomeStack}
-          options={{ headerShown: false }}
+          options={{
+            headerShown: false,
+            tabBarShowLabel: false,
+            tabBarIcon: ({ color, size, focused }) => (
+              <Icon
+                name="home"
+                color={focused ? "#1c1c89" : color}
+                size={size}
+              />
+            ),
+          }}
         />
-        <Tab.Screen name="Profile" component={ProfileScreen} />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{
+            tabBarIcon: ({ color, size, focused }) => (
+              <Icon
+                name="user"
+                color={focused ? "#1c1c89" : color}
+                size={size}
+              />
+            ),
+          }}
+        />
       </Tab.Navigator>
       <StatusBar style="auto" />
     </NavigationContainer>
