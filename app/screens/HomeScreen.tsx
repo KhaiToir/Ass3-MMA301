@@ -64,6 +64,7 @@ const HomeScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
+      fetchPlayers();
       loadFavoritePlayers();
     }, [])
   );
