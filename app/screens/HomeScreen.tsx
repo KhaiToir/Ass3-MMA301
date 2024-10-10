@@ -50,32 +50,30 @@ const HomeScreen = () => {
     }
   };
 
-  // Lấy danh sách cầu thủ yêu thích từ AsyncStorage
+  
   const loadFavoritePlayers = async () => {
     try {
       const favorites = await AsyncStorage.getItem("favorites");
       if (favorites) {
         setFavoritePlayers(JSON.parse(favorites));
+      } else {
+        setFavoritePlayers([]);
       }
     } catch (error) {
       console.error("Error loading favorites:", error);
     }
   };
-
   useFocusEffect(
     useCallback(() => {
       fetchPlayers();
       loadFavoritePlayers();
     }, [])
   );
-
-
   useEffect(() => {
     fetchPlayers();
     loadFavoritePlayers();
   }, []);
 
-  // Thêm hoặc xóa cầu thủ khỏi danh sách yêu thích
   const toggleFavorite = async (playerId: string) => {
     let updatedFavorites = [...favoritePlayers];
 
@@ -87,7 +85,6 @@ const HomeScreen = () => {
 
     setFavoritePlayers(updatedFavorites);
 
-    // Lưu lại danh sách yêu thích vào AsyncStorage
     try {
       await AsyncStorage.setItem("favorites", JSON.stringify(updatedFavorites));
     } catch (error) {
@@ -95,12 +92,12 @@ const HomeScreen = () => {
     }
   };
 
-  // Hàm làm mới trang khi kéo xuống
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchPlayers();
     setRefreshing(false);
   };
+  console.log(favoritePlayers);
 
   const renderItem = ({ item }: { item: Player }) => {
     const isFavorite = favoritePlayers.includes(item.id);
@@ -147,7 +144,6 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>List Players</Text>
       <FlatList
         data={players}
         renderItem={renderItem}
@@ -162,8 +158,8 @@ const HomeScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
-    marginBottom: 20,
+    paddingLeft: 10,
+    paddingRight: 10,
   },
   containerCard: {
     display: "flex",
@@ -219,10 +215,6 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 13,
     fontWeight: "700",
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "600",
   },
 });
 

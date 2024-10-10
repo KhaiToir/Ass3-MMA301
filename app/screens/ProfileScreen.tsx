@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { StyleSheet, Text, View, FlatList, Image, RefreshControl, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  Image,
+  RefreshControl,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { useFocusEffect } from "@react-navigation/native";
@@ -17,7 +26,6 @@ const ProfileScreen = () => {
   const [favoritePlayers, setFavoritePlayers] = useState<Player[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Lấy danh sách cầu thủ yêu thích từ AsyncStorage
   const loadFavoritePlayers = async () => {
     try {
       const favorites = await AsyncStorage.getItem("favorites");
@@ -37,7 +45,6 @@ const ProfileScreen = () => {
     }
   };
 
-  // Dùng useFocusEffect để tải lại dữ liệu mỗi khi chuyển sang ProfileScreen
   useFocusEffect(
     useCallback(() => {
       loadFavoritePlayers();
@@ -50,25 +57,63 @@ const ProfileScreen = () => {
     setRefreshing(false);
   };
 
-  // Hàm để thêm hoặc xóa cầu thủ khỏi danh sách yêu thích
-  const toggleFavorite = async (playerId: string) => {
-    const isFavorite = favoritePlayers.some((player) => player.id === playerId);
-
-    // Cập nhật danh sách yêu thích
-    const updatedFavorites = isFavorite
-      ? favoritePlayers.filter((player) => player.id !== playerId)
-      : [...favoritePlayers, favoritePlayers.find((player) => player.id === playerId)!];
-
-    setFavoritePlayers(updatedFavorites);
-
-    // Lưu lại danh sách yêu thích vào AsyncStorage
-    try {
-      const favoriteIds = updatedFavorites.map((player) => player.id);
-      await AsyncStorage.setItem("favorites", JSON.stringify(favoriteIds));
-    } catch (error) {
-      console.error("Error saving favorites:", error);
-    }
+  const clearAllFavorites = async () => {
+    Alert.alert(
+      "Confirm",
+      "Are you sure you want to clear all favorite players?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Clear All",
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem("favorites");
+              setFavoritePlayers([]);
+              loadFavoritePlayers(); // Gọi lại hàm load để cập nhật trạng thái
+            } catch (error) {
+              console.error("Error clearing favorites:", error);
+            }
+          },
+          style: "destructive",
+        },
+      ]
+    );
   };
+
+  const removeFavorite = async (playerId: string) => {
+    Alert.alert("Are you sure?", "Delete this player from the favorite list", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Confirm",
+        onPress: async () => {
+          const updatedFavorites = favoritePlayers.filter(
+            (player) => player.id !== playerId
+          );
+
+          setFavoritePlayers(updatedFavorites);
+
+          try {
+            const favoriteIds = updatedFavorites.map((player) => player.id);
+            await AsyncStorage.setItem(
+              "favorites",
+              JSON.stringify(favoriteIds)
+            );
+          } catch (error) {
+            console.error("Error saving favorites:", error);
+          }
+        },
+        style: "destructive",
+      },
+    ]);
+  };
+
+  console.log(favoritePlayers);
 
   const renderItem = ({ item }: { item: Player }) => {
     const isFavorite = favoritePlayers.some((player) => player.id === item.id);
@@ -85,7 +130,7 @@ const ProfileScreen = () => {
           </View>
         </View>
 
-        <TouchableOpacity onPress={() => toggleFavorite(item.id)}>
+        <TouchableOpacity onPress={() => removeFavorite(item.id)}>
           <Icon
             name={isFavorite ? "heart" : "heart-o"}
             size={20}
@@ -98,7 +143,14 @@ const ProfileScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Favorite Players</Text>
+      <View style={styles.section}>
+        <Text style={styles.title}>Information player</Text>
+        {favoritePlayers.length > 0 && (
+          <TouchableOpacity onPress={clearAllFavorites} style={styles.button}>
+            <Text style={styles.buttonText}>Clear</Text>
+          </TouchableOpacity>
+        )}
+      </View>
       {favoritePlayers.length > 0 ? (
         <FlatList
           data={favoritePlayers}
@@ -118,6 +170,7 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 10,
+    marginTop: 20,
     marginBottom: 20,
   },
   containerCard: {
@@ -154,6 +207,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   title: {
+    color: "#1c1c89",
     fontSize: 20,
     fontWeight: "600",
   },
@@ -162,6 +216,25 @@ const styles = StyleSheet.create({
     color: "#999",
     textAlign: "center",
     marginTop: 20,
+  },
+  button: {
+    backgroundColor: "#1c1c89",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 70,
+    padding: 10,
+    borderRadius: 10,
+  },
+  section: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
   },
 });
 

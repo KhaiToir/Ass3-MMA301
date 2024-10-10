@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,12 +12,25 @@ import {
   RefreshControl,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import Icon from "react-native-vector-icons/FontAwesome";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PlayerDetailScreen = ({ route }: any) => {
   const { player } = route.params;
-
   const [isEditing, setIsEditing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [favoritePlayers, setFavoritePlayers] = useState<string[]>([]);
+
+  const loadFavoritePlayers = async () => {
+    try {
+      const favorites = await AsyncStorage.getItem("favorites");
+      if (favorites) {
+        setFavoritePlayers(JSON.parse(favorites));
+      }
+    } catch (error) {
+      console.error("Error loading favorite players:", error);
+    }
+  };
 
   const handleUpdate = () => {
     setIsEditing(true);
@@ -25,6 +38,32 @@ const PlayerDetailScreen = ({ route }: any) => {
 
   const handleCancel = () => {
     setIsEditing(false);
+  };
+
+  useEffect(() => {
+    loadFavoritePlayers();
+  }, []);
+
+  const isFavorite = favoritePlayers.includes(player.id);
+
+  const toggleFavorite = async () => {
+    let updatedFavorites = [...favoritePlayers];
+
+    if (isFavorite) {
+      // Xóa cầu thủ khỏi danh sách yêu thích
+      updatedFavorites = updatedFavorites.filter((id) => id !== player.id);
+    } else {
+      // Thêm cầu thủ vào danh sách yêu thích
+      updatedFavorites.push(player.id);
+    }
+
+    setFavoritePlayers(updatedFavorites);
+
+    try {
+      await AsyncStorage.setItem("favorites", JSON.stringify(updatedFavorites));
+    } catch (error) {
+      console.error("Error updating favorites:", error);
+    }
   };
 
   const handleSave = async () => {
@@ -38,8 +77,8 @@ const PlayerDetailScreen = ({ route }: any) => {
           },
           body: JSON.stringify({
             player: playerData.player,
-            age: playerData.age,
-            price: playerData.price,
+            age: Number(playerData.age),
+            price: Number(playerData.price),
             captain: playerData.captain === "Yes",
             image: playerData.image,
           }),
@@ -105,8 +144,16 @@ const PlayerDetailScreen = ({ route }: any) => {
         <Image source={{ uri: player.image }} style={styles.image} />
 
         <View style={styles.section}>
-          <Text style={styles.title}>Information player</Text>
-
+          <View style={styles.sectionInformation}>
+            <Text style={styles.title}>Information player</Text>
+            <TouchableOpacity onPress={toggleFavorite}>
+              <Icon
+                name={isFavorite ? "heart" : "heart-o"}
+                size={20}
+                color={isFavorite ? "#cc5151" : "#000"}
+              />
+            </TouchableOpacity>
+          </View>
           {isEditing ? (
             <TouchableOpacity onPress={handleCancel} style={styles.button}>
               <Text style={styles.buttonText}>Cancel</Text>
@@ -170,8 +217,8 @@ const PlayerDetailScreen = ({ route }: any) => {
               style={styles.picker}
               enabled={isEditing}
             >
-              <Picker.Item label="Yes" value="Yes" />
-              <Picker.Item label="No" value="No" />
+              <Picker.Item label="Captain" value="Yes" />
+              <Picker.Item label="Striker" value="No" />
             </Picker>
           </View>
         </View>
@@ -219,6 +266,8 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 75,
     marginBottom: 30,
+    borderColor: "#1c1c89",
+    borderWidth: 2,
   },
   input: {
     height: 40,
@@ -247,6 +296,7 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   title: {
+    color: "#1c1c89",
     fontSize: 20,
     fontWeight: "600",
   },
@@ -273,6 +323,12 @@ const styles = StyleSheet.create({
     width: "100%",
     display: "flex",
     alignItems: "flex-end",
+  },
+  sectionInformation: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
 });
 
