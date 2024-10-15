@@ -7,11 +7,16 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import Icon from "react-native-vector-icons/FontAwesome";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  GestureHandlerRootView,
+  Swipeable,
+} from "react-native-gesture-handler";
 
 interface Player {
   player: string;
@@ -50,7 +55,6 @@ const HomeScreen = () => {
     }
   };
 
-  
   const loadFavoritePlayers = async () => {
     try {
       const favorites = await AsyncStorage.getItem("favorites");
@@ -63,12 +67,14 @@ const HomeScreen = () => {
       console.error("Error loading favorites:", error);
     }
   };
+
   useFocusEffect(
     useCallback(() => {
       fetchPlayers();
       loadFavoritePlayers();
     }, [])
   );
+
   useEffect(() => {
     fetchPlayers();
     loadFavoritePlayers();
@@ -92,45 +98,72 @@ const HomeScreen = () => {
     }
   };
 
+  const deletePlayer = async (playerId: string) => {
+    try {
+      await fetch(
+        `https://65451fd55a0b4b04436dad71.mockapi.io/Player/${playerId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      setPlayers((prevPlayers) =>
+        prevPlayers.filter((player) => player.id !== playerId)
+      );
+      Alert.alert("Success", "Player deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting player:", error);
+    }
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchPlayers();
     setRefreshing(false);
   };
-  console.log(favoritePlayers);
+
+  const renderRightActions = (playerId: string) => (
+    <TouchableOpacity
+      onPress={() => deletePlayer(playerId)}
+      style={styles.deleteButton}
+    >
+      <Text style={styles.deleteButtonText}>Delete</Text>
+    </TouchableOpacity>
+  );
 
   const renderItem = ({ item }: { item: Player }) => {
     const isFavorite = favoritePlayers.includes(item.id);
 
     return (
-      <TouchableOpacity
-        onPress={() => navigation.navigate("PlayerDetail", { player: item })}
-      >
-        <View style={styles.containerCard}>
-          <View style={styles.card}>
-            <Image source={{ uri: item.image }} style={styles.image} />
-            <View style={styles.intro}>
-              <View style={styles.nameIntro}>
-                <Text style={styles.name}>{item.player}</Text>
-                <View>
-                  {item.captain ? (
-                    <Icon name="rebel" size={20} color="#1c1c89" />
-                  ) : null}
+      <Swipeable renderRightActions={() => renderRightActions(item.id)}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("PlayerDetail", { player: item })}
+        >
+          <View style={styles.containerCard}>
+            <View style={styles.card}>
+              <Image source={{ uri: item.image }} style={styles.image} />
+              <View style={styles.intro}>
+                <View style={styles.nameIntro}>
+                  <Text style={styles.name}>{item.player}</Text>
+                  <View>
+                    {item.captain ? (
+                      <Icon name="rebel" size={20} color="#1c1c89" />
+                    ) : null}
+                  </View>
                 </View>
+                <Text style={styles.price}>Price: ${item.price}</Text>
               </View>
-              <Text style={styles.price}>Price: ${item.price}</Text>
             </View>
-          </View>
 
-          <TouchableOpacity onPress={() => toggleFavorite(item.id)}>
-            <Icon
-              name={isFavorite ? "heart" : "heart-o"}
-              size={20}
-              color="#cc5151"
-            />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+            <TouchableOpacity onPress={() => toggleFavorite(item.id)}>
+              <Icon
+                name={isFavorite ? "heart" : "heart-o"}
+                size={20}
+                color="#cc5151"
+              />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Swipeable>
     );
   };
 
@@ -143,21 +176,22 @@ const HomeScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       <FlatList
         data={players}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        } // Thêm RefreshControl
+        }
       />
-    </View>
+    </GestureHandlerRootView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     paddingLeft: 10,
     paddingRight: 10,
   },
@@ -181,7 +215,18 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
-
+  deleteButton: {
+    backgroundColor: "#ff3b30",
+    justifyContent: "center",
+    alignItems: "center",
+    width: 70,
+    marginVertical: 10,
+    borderRadius: 10,
+  },
+  deleteButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",

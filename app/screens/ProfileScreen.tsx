@@ -113,7 +113,6 @@ const ProfileScreen = () => {
     ]);
   };
 
-  console.log(favoritePlayers);
 
   const renderItem = ({ item }: { item: Player }) => {
     const isFavorite = favoritePlayers.some((player) => player.id === item.id);

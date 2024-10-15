@@ -87,7 +87,6 @@ const PlayerDetailScreen = ({ route }: any) => {
 
       if (response.ok) {
         const updatedPlayer = await response.json();
-        console.log(updatedPlayer);
         setIsEditing(false);
       } else {
         console.error("Failed to update player");
@@ -165,8 +164,8 @@ const PlayerDetailScreen = ({ route }: any) => {
           )}
         </View>
 
-        <View style={styles.lable}>
-          <Text style={styles.lableInput}>Name</Text>
+        <View style={styles.label}>
+          <Text style={styles.labelInput}>Name</Text>
           <TextInput
             editable={isEditing}
             style={styles.input}
@@ -178,8 +177,8 @@ const PlayerDetailScreen = ({ route }: any) => {
           />
         </View>
 
-        <View style={styles.lable}>
-          <Text style={styles.lableInput}>Age</Text>
+        <View style={styles.label}>
+          <Text style={styles.labelInput}>Age</Text>
           <TextInput
             editable={isEditing}
             style={styles.input}
@@ -192,8 +191,8 @@ const PlayerDetailScreen = ({ route }: any) => {
           />
         </View>
 
-        <View style={styles.lable}>
-          <Text style={styles.lableInput}>Price</Text>
+        <View style={styles.label}>
+          <Text style={styles.labelInput}>Price</Text>
           <TextInput
             editable={isEditing}
             style={styles.input}
@@ -206,8 +205,8 @@ const PlayerDetailScreen = ({ route }: any) => {
           />
         </View>
 
-        <View style={styles.lable}>
-          <Text style={styles.lableInput}>Captain</Text>
+        <View style={styles.label}>
+          <Text style={styles.labelInput}>Captain</Text>
           <View style={styles.pickerWrapper}>
             <Picker
               selectedValue={playerData.captain}
@@ -225,8 +224,8 @@ const PlayerDetailScreen = ({ route }: any) => {
 
         {isEditing && (
           <>
-            <View style={styles.lable}>
-              <Text style={styles.lableInput}>Image</Text>
+            <View style={styles.label}>
+              <Text style={styles.labelInput}>Image</Text>
               <TextInput
                 style={styles.input}
                 value={playerData.image}
@@ -256,11 +255,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
-  lable: {
+  label: {
     width: "100%",
     gap: 10,
   },
-  lableInput: { marginLeft: 2, fontSize: 18, fontWeight: "600" },
+  labelInput: { marginLeft: 2, fontSize: 18, fontWeight: "600" },
   image: {
     width: 150,
     height: 150,

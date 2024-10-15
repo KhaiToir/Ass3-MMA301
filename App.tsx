@@ -7,6 +7,7 @@ import HomeScreen from "./app/screens/HomeScreen";
 import ProfileScreen from "./app/screens/ProfileScreen";
 import Icon from "react-native-vector-icons/FontAwesome";
 import PlayerDetailScreen from "./app/screens/PlayerDetailScreen";
+import AddPlayer from "./app/screens/AddPlayer";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -42,6 +43,19 @@ export default function App() {
             tabBarIcon: ({ color, size, focused }) => (
               <Icon
                 name="home"
+                color={focused ? "#1c1c89" : color}
+                size={size}
+              />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Manage"
+          component={AddPlayer}
+          options={{
+            tabBarIcon: ({ color, size, focused }) => (
+              <Icon
+                name="bars"
                 color={focused ? "#1c1c89" : color}
                 size={size}
               />
